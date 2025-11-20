@@ -36,6 +36,7 @@ namespace TSMapEditor.Initialization
         List<TaskForce> TaskForces { get; }
         List<TeamType> TeamTypes { get; }
         List<AITriggerType> AITriggerTypes { get; }
+        List<AITargetType> AITargetTypes { get; }
         List<LocalVariable> LocalVariables { get; }
         List<Tube> Tubes { get; }
 

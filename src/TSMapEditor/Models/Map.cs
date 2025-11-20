@@ -168,6 +168,7 @@ namespace TSMapEditor.Models
         public List<CellTag> CellTags { get; private set; } = new List<CellTag>();
         public List<Script> Scripts { get; protected set; } = new List<Script>();
         public List<TeamType> TeamTypes { get; protected set; } = new List<TeamType>();
+        public List<AITargetType> AITargetTypes { get; protected set; } = new List<AITargetType>();
         public List<AITriggerType> AITriggerTypes { get; protected set; } = new List<AITriggerType>();
         public List<LocalVariable> LocalVariables { get; protected set; } = new List<LocalVariable>();
         public List<Tube> Tubes { get; private set; } = new List<Tube>();
@@ -277,6 +278,7 @@ namespace TSMapEditor.Models
             MapLoader.ReadTags(this, mapIni);
             MapLoader.ReadCellTags(this, mapIni);
             MapLoader.ReadScripts(this, mapIni);
+            MapLoader.ReadAITargetTypes(this, mapIni);
             MapLoader.ReadTeamTypes(this, mapIni, EditorConfig.TeamTypeFlags);
             MapLoader.ReadAITriggerTypes(this, mapIni);
             MapLoader.ReadLocalVariables(this, mapIni);
@@ -401,6 +403,7 @@ namespace TSMapEditor.Models
             MapWriter.WriteTags(this, LoadedINI);
             MapWriter.WriteCellTags(this, LoadedINI);
             MapWriter.WriteScripts(this, LoadedINI);
+            MapWriter.WriteAITargetTypes(this, LoadedINI);
             MapWriter.WriteTeamTypes(this, LoadedINI, EditorConfig.TeamTypeFlags);
 
             MapWriter.WriteLocalVariables(this, LoadedINI);

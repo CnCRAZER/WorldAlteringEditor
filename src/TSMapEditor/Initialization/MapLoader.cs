@@ -979,6 +979,30 @@ namespace TSMapEditor.Initialization
             Logger.Log("ScriptTypes read successfully.");
         }
 
+        public static void ReadAITargetTypes(IMap map, IniFile mapIni)
+        {
+            Logger.Log("Reading AITargetTypes.");
+
+            var section = mapIni.GetSection("AITargetTypes");
+            if (section == null)
+                return;
+
+            map.AITargetTypes.Clear();
+
+            for (int i = 0; ; i++)
+            {
+                string value = section.GetStringValue(i.ToString(), string.Empty);
+                if (string.IsNullOrEmpty(value))
+                    break;
+
+                var aiTargetType = new AITargetType();
+                aiTargetType.ReadFromIniString(value);
+                map.AITargetTypes.Add(aiTargetType);
+            }
+
+            Logger.Log("AITargetTypes read successfully.");
+        }
+
         public static void ReadTeamTypes(IMap map, IniFile mapIni, List<TeamTypeFlag> teamTypeFlags)
         {
             Logger.Log("Reading TeamTypes.");

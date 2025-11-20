@@ -316,6 +316,24 @@ namespace TSMapEditor.Initialization
             }
         }
 
+        public static void WriteAITargetTypes(IMap map, IniFile mapIni)
+        {
+            const string sectionName = "AITargetTypes";
+            mapIni.RemoveSection(sectionName);
+
+            if (map.AITargetTypes.Count == 0)
+                return;
+
+            var aiTargetTypesSection = new IniSection(sectionName);
+            mapIni.AddSection(aiTargetTypesSection);
+
+            for (int i = 0; i < map.AITargetTypes.Count; i++)
+            {
+                AITargetType aiTargetType = map.AITargetTypes[i];
+                aiTargetTypesSection.SetStringValue(i.ToString(), aiTargetType.WriteToIniString());
+            }
+        }
+
         public static void WriteTeamTypes(IMap map, IniFile mapIni, List<TeamTypeFlag> teamTypeFlags)
             => WriteTeamTypes(map.TeamTypes, mapIni, teamTypeFlags);
 

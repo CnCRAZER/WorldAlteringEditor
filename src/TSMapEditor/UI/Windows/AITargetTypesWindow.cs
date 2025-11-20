@@ -1,3 +1,4 @@
+using Rampastring.Tools;
 using Rampastring.XNAUI;
 using Rampastring.XNAUI.XNAControls;
 using System;
@@ -45,7 +46,6 @@ namespace TSMapEditor.UI.Windows
             FindChild<EditorButton>("btnDeleteTechno").LeftClick += BtnDeleteTechno_LeftClick;
 
             lbAITargetTypes.SelectedIndexChanged += LbAITargetTypes_SelectedIndexChanged;
-            lbTechnoEntries.SelectedIndexChanged += (s, e) => { }; // used for delete button only
 
             tbSearchTechno.TextChanged += (s, e) => ApplyTechnoFilter();
 
@@ -64,16 +64,10 @@ namespace TSMapEditor.UI.Windows
         {
             lbAITargetTypes.Clear();
 
-            var section = map.LoadedINI.GetSection("AITargetTypes");
-            if (section == null)
-                return;
-
-            for (int i = 0; ; i++)
+            for (int i = 0; i < map.AITargetTypes.Count; i++)
             {
-                string value = section.GetStringValue(i.ToString(), string.Empty);
-                if (string.IsNullOrEmpty(value))
-                    break;
-
+                var aiTargetType = map.AITargetTypes[i];
+                string value = aiTargetType.WriteToIniString();
                 lbAITargetTypes.AddItem(new XNAListBoxItem { Text = $"{i}: {value}", Tag = i });
             }
         }
@@ -89,21 +83,16 @@ namespace TSMapEditor.UI.Windows
 
             editedIndex = (int)lbAITargetTypes.SelectedItem.Tag;
 
-            var section = map.LoadedINI.GetSection("AITargetTypes");
-            string value = section?.GetStringValue(editedIndex.ToString(), string.Empty) ?? string.Empty;
-            PopulateTechnoEntries(value);
+            var aiTargetType = map.AITargetTypes[editedIndex];
+            PopulateTechnoEntries(aiTargetType.TechnoNames);
         }
 
-        private void PopulateTechnoEntries(string value)
+        private void PopulateTechnoEntries(List<string> technoNames)
         {
             lbTechnoEntries.Clear();
-            if (string.IsNullOrWhiteSpace(value))
-                return;
-
-            var tokens = value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var token in tokens)
+            foreach (var technoName in technoNames)
             {
-                var trimmed = token.Trim();
+                var trimmed = technoName.Trim();
                 var match = allAvailableTechnos.FirstOrDefault(t => string.Equals(t.ININame, trimmed, StringComparison.CurrentCultureIgnoreCase));
                 lbTechnoEntries.AddItem(new XNAListBoxItem { Text = trimmed, Tag = (object)match ?? trimmed });
             }
@@ -133,8 +122,11 @@ namespace TSMapEditor.UI.Windows
 
             foreach (var techno in allAvailableTechnos)
             {
-                if (!showAll && !techno.ININame.Contains(filter, StringComparison.CurrentCultureIgnoreCase) && !techno.GetEditorDisplayName().Contains(filter, StringComparison.CurrentCultureIgnoreCase))
+                if (!showAll && !techno.ININame.Contains(filter, StringComparison.CurrentCultureIgnoreCase) && 
+                    !techno.GetEditorDisplayName().Contains(filter, StringComparison.CurrentCultureIgnoreCase))
+                {
                     continue;
+                }
 
                 lbAvailableTechnos.AddItem(new XNAListBoxItem { Text = $"{techno.ININame} ({techno.GetEditorDisplayName()})", Tag = techno });
             }
@@ -142,18 +134,10 @@ namespace TSMapEditor.UI.Windows
 
         private void BtnNewAITargetType_LeftClick(object sender, EventArgs e)
         {
-            var section = map.LoadedINI.GetSection("AITargetTypes");
-            if (section == null)
-            {
-                map.LoadedINI.AddSection("AITargetTypes");
-                section = map.LoadedINI.GetSection("AITargetTypes");
-            }
+            var aiTargetType = new AITargetType();
+            aiTargetType.TechnoNames.Add("E1");
+            map.AITargetTypes.Add(aiTargetType);
 
-            int newIndex = 0;
-            while (!string.IsNullOrEmpty(section.GetStringValue(newIndex.ToString(), string.Empty)))
-                newIndex++;
-
-            section.SetStringValue(newIndex.ToString(), "E1");
             ListAITargetTypes();
             lbAITargetTypes.SelectedIndex = lbAITargetTypes.Items.Count - 1;
         }
@@ -163,29 +147,13 @@ namespace TSMapEditor.UI.Windows
             if (editedIndex == -1)
                 return;
 
-            var section = map.LoadedINI.GetSection("AITargetTypes");
-            if (section == null)
-                return;
-
-            int current = editedIndex;
-            while (true)
-            {
-                string nextValue = section.GetStringValue((current + 1).ToString(), string.Empty);
-                if (string.IsNullOrEmpty(nextValue))
-                {
-                    section.RemoveKey(current.ToString());
-                    break;
-                }
-
-                section.SetStringValue(current.ToString(), nextValue);
-                current++;
-            }
+            map.AITargetTypes.RemoveAt(editedIndex);
 
             ListAITargetTypes();
             if (lbAITargetTypes.Items.Count == 0)
                 editedIndex = -1;
             else
-                lbAITargetTypes.SelectedIndex = Math.Min(current, lbAITargetTypes.Items.Count - 1);
+                lbAITargetTypes.SelectedIndex = Math.Min(editedIndex, lbAITargetTypes.Items.Count - 1);
         }
 
         private void BtnCloneAITargetType_LeftClick(object sender, EventArgs e)
@@ -193,21 +161,12 @@ namespace TSMapEditor.UI.Windows
             if (editedIndex == -1)
                 return;
 
-            var section = map.LoadedINI.GetSection("AITargetTypes");
-            if (section == null)
-            {
-                map.LoadedINI.AddSection("AITargetTypes");
-                section = map.LoadedINI.GetSection("AITargetTypes");
-            }
+            var original = map.AITargetTypes[editedIndex];
+            var clone = new AITargetType(new List<string>(original.TechnoNames));
+            map.AITargetTypes.Add(clone);
 
-            string value = section.GetStringValue(editedIndex.ToString(), string.Empty);
-            int newIndex = 0;
-            while (!string.IsNullOrEmpty(section.GetStringValue(newIndex.ToString(), string.Empty)))
-                newIndex++;
-
-            section.SetStringValue(newIndex.ToString(), value);
             ListAITargetTypes();
-            editedIndex = newIndex;
+            editedIndex = map.AITargetTypes.Count - 1;
             SelectCurrentEntry();
         }
 
@@ -242,16 +201,10 @@ namespace TSMapEditor.UI.Windows
             if (editedIndex == -1)
                 return;
 
-            string combined = string.Join(",", lbTechnoEntries.Items.Select(item => item.Text).Where(text => !string.IsNullOrWhiteSpace(text)));
+            var aiTargetType = map.AITargetTypes[editedIndex];
+            aiTargetType.TechnoNames.Clear();
+            aiTargetType.TechnoNames.AddRange(lbTechnoEntries.Items.Select(item => item.Text).Where(text => !string.IsNullOrWhiteSpace(text)));
 
-            var section = map.LoadedINI.GetSection("AITargetTypes");
-            if (section == null)
-            {
-                map.LoadedINI.AddSection("AITargetTypes");
-                section = map.LoadedINI.GetSection("AITargetTypes");
-            }
-
-            section.SetStringValue(editedIndex.ToString(), combined);
             ListAITargetTypes();
             SelectCurrentEntry();
         }
